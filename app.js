@@ -4,7 +4,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const themes = ["Analytics leadership", "Data platforms", "Health and ICT4D", "Infrastructure"];
 let active = null;
 
-function chips(tags) { return tags.map(t => `<button class="chip${t === active ? " on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join(""); }
+function chips(tags) { return tags.map(t => `<button class="chip${t === active ? " on" : ""}" aria-pressed="${t === active}" data-tag="${esc(t)}">${esc(t)}</button>`).join(""); }
+const nomatch = tags => match(tags) ? "" : `<p class="nomatch">Not tagged “${esc(active)}”.</p>`;
 function match(tags) { return !active || tags.includes(active); }
 
 function renderExplorer() {
@@ -18,6 +19,7 @@ function renderExplorer() {
     <article class="role${match(r.tags) ? "" : " dim"}">
       <p class="when">${esc(r.period)}</p>
       <h3>${esc(r.title)}, ${esc(r.org)}</h3>
+      ${nomatch(r.tags)}
       <p>${esc(r.summary)}</p>
       <details${active && match(r.tags) ? " open" : ""}><summary>What I did</summary>
         <ul>${r.highlights.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
@@ -28,8 +30,10 @@ function renderExplorer() {
   $("#projects").innerHTML = D.projects.map(p => `
     <article class="proj${match(p.tags) ? "" : " dim"}">
       <h3>${esc(p.name)}</h3>
+      ${nomatch(p.tags)}
       <p class="when">${esc(p.role)}</p>
       <p>${esc(p.blurb)}</p>
+      ${p.url ? `<p><a href="${esc(p.url)}">Read the design</a></p>` : ""}
       ${p.points.length ? `<details${active && match(p.tags) ? " open" : ""}><summary>Design notes</summary><ul>${p.points.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
       <div class="tags">${chips(p.tags)}</div>
     </article>`).join("");

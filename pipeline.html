@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community health data pipeline | Celsus Caesar Oweitu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Newsreader:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"><script src="theme.js"></script></head>
+<body><a class="skip" href="#main">Skip to content</a><div class="wrap">
+<nav><a href="index.html">Work history</a><a href="pipeline.html">Pipeline design</a><a href="cv.html">Condensed CV</a></nav>
+<header class="hero" id="main" tabindex="-1">
+  <h1>Community health data pipeline</h1>
+  <p class="lede">A reference design for turning field health data into one trustworthy record per person.</p>
+  <p>Health programmes collect data in several tools, on paper and across teams. This design brings those sources together, matches people across them, and gives programme staff a reporting layer they can query. It is built local and on-premises first, so a team can run it on its own hardware with no cloud dependency. The same design has been adapted for cloud-native and hybrid deployments.</p>
+</header>
+
+<h2>How data flows</h2>
+<figure class="diagram">
+<svg viewBox="0 0 770 300" role="img" aria-labelledby="dt dd" xmlns="http://www.w3.org/2000/svg">
+  <title id="dt">Pipeline architecture</title>
+  <desc id="dd">KoBoToolbox, CommCare and scanned paper forms feed an ingestion service. It writes to PostgreSQL, where identity resolution produces one record per person, with a human review queue for uncertain matches. Metabase reads from PostgreSQL for reporting. All services sit inside a private network protected by Caddy and WireGuard.</desc>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+  <g font-family="Public Sans, system-ui, sans-serif" font-size="14" fill="var(--ink)">
+    <rect x="205" y="14" width="552" height="272" rx="8" fill="none" stroke="var(--mute)" stroke-dasharray="6 5"/>
+    <text x="218" y="34" fill="var(--mute)" font-size="12.5">Your own hardware (Docker Compose, Caddy TLS, WireGuard VPN)</text>
+
+    <g fill="var(--tint)" stroke="var(--accent)" stroke-width="1.5">
+      <rect x="14" y="60" width="150" height="46" rx="5"/>
+      <rect x="14" y="120" width="150" height="46" rx="5"/>
+      <rect x="14" y="180" width="150" height="46" rx="5"/>
+      <rect x="225" y="105" width="140" height="80" rx="5"/>
+      <rect x="415" y="70" width="170" height="150" rx="5"/>
+      <rect x="415" y="238" width="170" height="38" rx="5"/>
+      <rect x="630" y="105" width="115" height="80" rx="5"/>
+    </g>
+    <g stroke="none">
+      <text x="89" y="88" text-anchor="middle">KoBoToolbox</text>
+      <text x="89" y="148" text-anchor="middle">CommCare</text>
+      <text x="89" y="200" text-anchor="middle">Scanned paper forms</text><text x="89" y="216" text-anchor="middle" fill="var(--mute)" font-size="12.5">read by OCR</text>
+      <text x="295" y="140" text-anchor="middle" font-weight="600">Ingestion</text><text x="295" y="158" text-anchor="middle" fill="var(--mute)" font-size="12.5">Python jobs</text><text x="295" y="173" text-anchor="middle" fill="var(--mute)" font-size="12.5">clean and stage</text>
+      <text x="500" y="100" text-anchor="middle" font-weight="600">PostgreSQL</text>
+      <text x="500" y="124" text-anchor="middle" fill="var(--mute)" font-size="12.5">staging tables</text>
+      <text x="500" y="146" text-anchor="middle" fill="var(--mute)" font-size="12.5">identity resolution</text>
+      <text x="500" y="168" text-anchor="middle" fill="var(--mute)" font-size="12.5">one record per person</text>
+      <text x="500" y="196" text-anchor="middle" fill="var(--mute)" font-size="12.5">(pg_trgm matching)</text>
+      <text x="500" y="262" text-anchor="middle">Human review queue</text>
+      <text x="687" y="140" text-anchor="middle" font-weight="600">Metabase</text><text x="687" y="158" text-anchor="middle" fill="var(--mute)" font-size="12.5">reporting</text>
+    </g>
+    <g stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#ar)">
+      <path d="M164 83 C190 83 195 130 223 135"/>
+      <path d="M164 143 L223 145"/>
+      <path d="M164 203 C190 203 195 160 223 155"/>
+      <path d="M365 145 L413 145"/>
+      <path d="M585 145 L628 145" marker-start="none"/>
+    </g>
+    <path d="M500 220 L500 236" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+  </g>
+</svg>
+<figcaption>Reporting reads from the resolved records, not from the raw sources.</figcaption>
+</figure>
+
+<h2>One person, one record</h2>
+<p>The same person can appear in several tools with spelling differences or missing fields. Matching runs in four steps, and only the third involves a person:</p>
+<ol>
+  <li><strong>Exact match</strong> on stable identifiers links the record straight away.</li>
+  <li><strong>High-confidence fuzzy match</strong> uses trigram similarity on names and other fields, and links only above a strict threshold.</li>
+  <li><strong>Human review</strong> queues the uncertain cases for staff to confirm or reject.</li>
+  <li><strong>New record</strong> is created only when nothing plausible matches.</li>
+</ol>
+<p>Nothing is merged silently when confidence is low, so reports can be traced back to the source records.</p>
+
+<h2>Running it locally, in a hybrid setup, or in the cloud</h2>
+<p>The services are packaged with Docker Compose, using a base file and per-environment overrides. That is what lets the same design move between environments without being rewritten.</p>
+<div class="scroll"><table>
+  <thead><tr><th>Variant</th><th>Where it runs</th><th>When it fits</th></tr></thead>
+  <tbody>
+    <tr><td>Local or on-premises</td><td>Every service on hardware the team controls, reached over a private VPN.</td><td>Limited or costly connectivity, strict control over where health data lives, minimal running costs.</td></tr>
+    <tr><td>Hybrid</td><td>Sensitive or core components stay local; selected components move to cloud infrastructure, linked over the private network.</td><td>Teams that need local control of data but want cloud reach or capacity for some functions.</td></tr>
+    <tr><td>Cloud-native</td><td>Services run on a cloud platform in place of local hardware.</td><td>Organisations already standardised on a cloud provider, or needing to scale across many countries.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Delivery</h2>
+<ul>
+  <li>Private access over a WireGuard-based VPN; Caddy handles TLS.</li>
+  <li>Deployment through GitHub Actions.</li>
+  <li>Reporting in Metabase for programme and data staff.</li>
+</ul>
+<p class="when">This page describes a design. It contains no real beneficiary data.</p>
+</div></body></html>

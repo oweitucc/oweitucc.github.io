@@ -3,11 +3,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Celsus Caesar Oweitu | Work history</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,600;1,400&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css"></head>
-<body><div class="wrap">
-<nav><a href="index.html">Work history</a><a href="cv.html">Condensed CV</a></nav>
-<header class="hero">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Newsreader:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"><script src="theme.js"></script></head>
+<body><a class="skip" href="#main">Skip to content</a><div class="wrap">
+<nav><a href="index.html">Work history</a><a href="pipeline.html">Pipeline design</a><a href="cv.html">Condensed CV</a></nav>
+<header class="hero" id="main" tabindex="-1">
   <h1 id="name"></h1><p id="role" class="when"></p>
   <p class="lede" id="tagline"></p><p id="summary"></p>
   <div class="links" id="links"></div>
@@ -15,7 +15,7 @@
 <section class="filters" aria-label="Filter work history">
   <div class="group" id="themes"></div>
   <details><summary>Filter by tool</summary><div class="group" id="tools"></div></details>
-  <p id="status"></p><button id="clear" hidden>Clear filter</button>
+  <p id="status" aria-live="polite"></p><button id="clear" hidden>Clear filter</button>
 </section>
 <h2>Roles</h2><div id="timeline"></div>
 <h2>Projects</h2><div id="projects"></div>
